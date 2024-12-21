@@ -62,3 +62,42 @@ def main():
 if __name__ == "__main__":
     main()
 ```
+Результат работы программы:
+![Uploading image.png…]()
+2. Проанализировать код и сделать кодревью, указав слабые места. Слабость уязвимого кода необходимо указать с использованием метрики CWE (база данных [cwe.mitre.org](http://cwe.mitre.org))
+
+``` PHP
+<?php
+
+if( isset( $_GET[ 'Login' ] ) ) {
+	// Get username
+	$user = $_GET[ 'username' ];
+	// Get password
+	$pass = $_GET[ 'password' ];
+	$pass = md5( $pass );
+	// Check the database
+	$query  = "SELECT * FROM `users` WHERE user = '$user' AND password = '$pass';";
+	$result = mysqli_query($GLOBALS["___mysqli_ston"],  $query ) or die( '<pre>' . ((is_object($GLOBALS["___mysqli_ston"])) ? mysqli_error($GLOBALS["___mysqli_ston"]) : (($___mysqli_res = mysqli_connect_error()) ? $___mysqli_res : false)) . '</pre>' );
+	if( $result && mysqli_num_rows( $result ) == 1 ) {
+		// Get users details
+		$row    = mysqli_fetch_assoc( $result );
+		$avatar = $row["avatar"];
+		// Login successful
+		$html .= "<p>Welcome to the password protected area {$user}</p>";
+		$html .= "<img src=\"{$avatar}\" />";
+	}
+	else {
+		// Login failed
+		$html .= "<pre><br />Username and/or password incorrect.</pre>";
+	}
+	((is_null($___mysqli_res = mysqli_close($GLOBALS["___mysqli_ston"]))) ? false : $___mysqli_res);
+}
+?>
+```
+1)SQL Injection (CWE-89): В коде выполняется прямое использование переменных из входных данных ($_GET['username'] и $_GET['password']) в SQL-запросе без какой-либо защиты. Это означает, что злоумышленник может вставить вредоносный SQL-код через параметры запроса и изменить запрос так, чтобы он всегда возвращал истинный результат (например, взломав пароли или получив доступ к базе данных).
+
+2)Код не имеет защиты от атак перебора паролей, таких как блокировка аккаунта или использование капчи после нескольких неудачных попыток входа. Это позволяет злоумышленнику бесконечно пытаться угадать пароль, например, с использованием перебора.
+
+3)Отсутствие защиты от CSRF атак (CWE-352):Код не включает защиту от атак подделки межсайтовых запросов (CSRF). Это значит, что злоумышленник может создать фальшивую форму на другом сайте, которая будет отправлять запросы на авторизацию от имени жертвы, если она уже авторизована на данном сайте.
+
+
