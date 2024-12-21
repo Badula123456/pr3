@@ -118,6 +118,7 @@ if (!isset($_SESSION['last_attempt_time'])) {
     $_SESSION['last_attempt_time'] = 0;
 }
 
+// Ограничение на количество попыток
 $max_attempts = 5;
 $block_duration = 300; // 5 минут
 
@@ -126,6 +127,7 @@ if ($_SESSION['failed_attempts'] >= $max_attempts && (time() - $_SESSION['last_a
     die("Too many failed login attempts. Please try again after " . ceil($remaining_time / 60) . " minutes.");
 }
 
+// Проверка наличия необходимых параметров
 $message = "";
 if (isset($_GET['Login'])) {
     if (isset($_GET['username']) && isset($_GET['password']) && isset($_GET['user_token'])) {
@@ -139,7 +141,7 @@ if (isset($_GET['Login'])) {
         $user_token = filter_input(INPUT_GET, 'user_token', FILTER_SANITIZE_STRING);
 
         if ($user_token !== $_SESSION['user_token']) {
-            $message = "Invalid token. Please refresh the page and try again.";
+            $message = "Неверный токен. Перезапустите страницу и попробуйте снова";
         } else {
 
             $mysqli = new mysqli("localhost", "root", "", "dvwa");
@@ -166,17 +168,18 @@ if (isset($_GET['Login'])) {
             } else {
                 $_SESSION['failed_attempts']++;
                 $_SESSION['last_attempt_time'] = time();
-                $message = "Username and/or password incorrect.";
+                $message = "Пользователь или пароль не верен.";
             }
 
             $stmt->close();
             $mysqli->close();
         }
     } else {
-        $message = "Please fill in all fields.";
+        $message = "Заполните все поля.";
     }
 }
 
+// Генерация нового токена при каждом обновлении страницы
 if (!isset($_SESSION['user_token']) || empty($_SESSION['user_token'])) {
     $_SESSION['user_token'] = bin2hex(random_bytes(32));
 }
